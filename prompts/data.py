@@ -1,0 +1,22 @@
+from prompts.base import PromptBase
+
+
+class DataGeneration(PromptBase):
+    prompt = '''
+    # 任务
+    根据如下输入数据的output的生成instruction的内容。
+    # 任务描述
+    - instruction是男性对女性下一句话的反驳
+    - instruction禁止出现output的内容
+    - instruction是一位男性发言，output是一位情感高手女性的回复
+    # 输入数据
+    {data}
+    '''
+    output = '''
+    # 输出要求：
+      -前3个元素10个字以内
+      -后2个元素20个字以上
+      -不包含前后缀，直接生成含有5个元素的list
+    # 输出示例
+      [上一句1,上一句2,...]
+    '''
