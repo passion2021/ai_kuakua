@@ -4,7 +4,7 @@ from initialize import openai_chat, deepseek_chat
 from prompts.data import DataGeneration
 from utils.schema import HumanMessage
 from db.schema import Dialogue
-from utils.common import extract_struct
+from utils.extract_tools import extract_struct
 from logger_config import logger
 
 
