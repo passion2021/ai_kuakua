@@ -49,7 +49,30 @@ class Dataset:
             data.append(Alpaca)
         self.write_json(data)
 
+    def data_count(self, path):
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            print(f'read name={path}, count={len(data)}')
+            return len(data)
+
+    def dialogue_n_times_insert_json(self, path, samples: list, times):
+        origin_data = self.read_json(path)
+        for sample in samples:
+            for _ in range(times):
+                origin_data.append(sample)
+        self.write_json(origin_data)
+
 
 if __name__ == '__main__':
-    # Dataset().create_dataset_from_dir(input_path=r'D:\project\MediaCrawler\example\target')
-    Dataset().create_dataset_from_mongo()
+    dataset = Dataset()
+    sample1 = {
+        "instruction": "你好",
+        "input": "",
+        "output": "宝宝~ 你不要再不相信我了 好不好",
+    }
+    sample2 = {
+        "instruction": "你是谁",
+        "input": "",
+        "output": "我是你的宝宝呀~",
+    }
+    # dataset.create_dataset_from_mongo()

@@ -1,5 +1,3 @@
-import json
-
 from db.schema import Dialogue
 
 
@@ -18,18 +16,34 @@ def insert_one_not_exist(instruction, output):
         print(f"Duplicate found: {instruction} -> {output}")
 
 
-def delete_one_from_keyword(field, keyword):
+def delete_all_by_sensitive(field, keyword):
     """
-    删除一条包含敏感词的数据
+    将包含敏感词的数据删除
     """
+    count = Dialogue.objects(**{f'{field}__contains': keyword}).count()
     Dialogue.objects(**{f'{field}__contains': keyword}).delete()
+    print(f"Deleted: {field} -> {keyword} count: {count}")
+
+
+def delete_all_by_field(field, value):
+    """
+    将字段匹配特定内容的数据删除
+    """
+    count = Dialogue.objects(**{f'{field}': value}).count()
+    Dialogue.objects(**{f'{field}': value}).delete()
+    print(f"Deleted: {field} -> {value} count: {count}")
+
+
+def update_all_data_field(field, old_value, new_value):
+    """
+    更新字段匹配特定内容的数据
+    """
+    count = Dialogue.objects(**{f'{field}': old_value}).count()
+    Dialogue.objects(**{f'{field}': old_value}).update(**{f'{field}': new_value})
+    print(f"Update: {field} -> {old_value} -> {new_value} count: {count}")
 
 
 if __name__ == '__main__':
-    path = '../example/final_data_example.json'
-    with open(path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-        for item in data:
-            instruction = item.get("instruction")
-            output = item.get("output")
-            insert_one_not_exist(instruction, output)
+    print(Dialogue.objects.count())
+    delete_all_by_field('instruction', '你是谁')
+    print(Dialogue.objects.count())
