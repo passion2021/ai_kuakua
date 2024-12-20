@@ -12,12 +12,6 @@ from prompts.data import ChineseKuaKua
 
 
 class AIGenerator:
-    CONCURRENT_REQUESTS = 10
-
-    def __init__(self):
-        # 全局信号量，控制并发数
-        self.semaphore = asyncio.Semaphore(self.CONCURRENT_REQUESTS)
-
     def douyin_from_mongo(self):
         dialogues = list(Dialogue.objects.all())  # 无限了
         print(len(dialogues))
@@ -44,14 +38,32 @@ class AIGenerator:
             except Exception as e:
                 logger.error(f'obj_id:{dialogue.id} error:{str(e)}')
 
-    async def chinese_kuakua_from_csv(self, path, num):
-        data = get_qa_from_csv(path, num)
+
+class AsyncAIGenerator:
+    CONCURRENT_REQUESTS = 2
+
+    def __init__(self, input_data_num):
+        self.num = input_data_num
+        self.semaphore = asyncio.Semaphore(self.CONCURRENT_REQUESTS)
+
+    async def chinese_kuakua_from_csv(self, path):
+        data = get_qa_from_csv(path=path, num=self.num)
         results = await self.process_batches(data)
         return results  # 返回最终的结果列表
 
     def prompt_wrapper(self, data):
+        random_num = random.randint(500, 500 + self.num - 1)
+        obj = Dialogue.objects.all()[random_num]
+        sample = {
+            'question':obj.instruction,
+            'answer': obj.output
+        }
+        data = {
+            'question': data[0],
+            'answer': data[1]
+        }
         messages = [
-            HumanMessage(content=ChineseKuaKua.format(data=data, sample='宝宝 凌晨了 早点休息 我会心疼的[调皮]'))
+            HumanMessage(content=ChineseKuaKua.format(data=data, sample=sample))
         ]
         return messages
 
@@ -61,6 +73,7 @@ class AIGenerator:
         # 分批处理数据
         for index, data in enumerate(data_list):
             data = self.prompt_wrapper(data)
+            print(data)
             # 限制并发数
             tasks.append(asyncio.create_task(self.fetch_data(data, index)))
 
@@ -91,8 +104,9 @@ class AIGenerator:
 
 if __name__ == '__main__':
     path = r'D:\project\dataset_maker\data\other\train.csv'
-    num = 5
-    asyncio.run(AIGenerator().chinese_kuakua_from_csv(path, num))
+    input_data_num = 5
+    asyncio.run(AsyncAIGenerator(input_data_num=input_data_num).chinese_kuakua_from_csv(path))
+
     # 原始数据500条 -> ai增强获得了4500条 也就是说 500 -> 5000 条
     # 你好、你是谁这两个特定问题，各添加50条数据（还是比例少了） 一个问题50条数据 然后再将其×5 得到 250 条这样还少了
     # 找到日常对话数据集 使用RAG产生角色扮演对话数据

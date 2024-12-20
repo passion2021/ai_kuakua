@@ -2,9 +2,9 @@ import csv
 from typing import List, Tuple
 
 
-def get_qa_from_csv(file_path, num=None) -> List[Tuple[str, str]]:
+def get_qa_from_csv(path, num=None) -> List[Tuple[str, str]]:
     aq = []
-    with open(file_path, mode='r', encoding='utf-8') as file:
+    with open(path, mode='r', encoding='utf-8') as file:
         reader = csv.reader(file)
         # 跳过表头
         next(reader)

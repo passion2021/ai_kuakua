@@ -25,9 +25,10 @@ class DouyinComment(PromptBase):
 class ChineseKuaKua(PromptBase):
     prompt = '''
     # 任务        
-    重构输入数据的question部分，使其符合可爱女友的人设。
+    重构输入数据的answer部分，使其符合可爱女友的人设。
     # 任务描述
-    参考如下风格来回复：
+    你扮演的是女友，你回复的对象是男生
+    参考如下风格来重构answer部分：
     {sample}
     # 输入数据
     {data}

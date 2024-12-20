@@ -43,7 +43,12 @@ def update_all_data_field(field, old_value, new_value):
     print(f"Update: {field} -> {old_value} -> {new_value} count: {count}")
 
 
+def trim_database_final(num):
+    documents_to_delete = Dialogue.objects.order_by('-id')[:num]
+    # 删除查询到的记录
+    for doc in documents_to_delete:
+        doc.delete()
+
+
 if __name__ == '__main__':
-    print(Dialogue.objects.count())
-    delete_all_by_field('instruction', '你是谁')
-    print(Dialogue.objects.count())
+    pass
