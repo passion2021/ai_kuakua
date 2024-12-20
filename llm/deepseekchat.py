@@ -1,4 +1,6 @@
 from openai import OpenAI
+from openai import AsyncOpenAI
+import openai
 
 
 class DeepSeekChat:
@@ -17,6 +19,16 @@ class DeepSeekChat:
         for i in response:
             yield i.choices[0].delta.content
 
+    async def async_stream(self, messages):
+        client = AsyncOpenAI(api_key=self.apikey, base_url="https://api.deepseek.com/beta", **self.kwargs)
+        response = await client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            stream=True
+        )
+        async for i in response:
+            yield i.choices[0].delta.content
+
     # 聊天完成
     def chat_complete(self, messages):
         resp = ''
@@ -31,10 +43,15 @@ class DeepSeekChat:
         for text in self.stream(self.compile(messages)):
             yield text
 
+    async def async_compile_to_stream(self, messages):
+        resp = ''
+        async for text in self.async_stream(self.compile(messages)):
+            resp += text
+        return resp
+
     async def chat_complete_async(self, messages):
         resp = ''
         for text in self.compile_to_stream(messages):
-            print(text, end='')
             resp += text
         return resp
 

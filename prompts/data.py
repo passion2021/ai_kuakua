@@ -1,7 +1,7 @@
 from prompts.base import PromptBase
 
 
-class DataGeneration(PromptBase):
+class DouyinComment(PromptBase):
     prompt = '''
     # 任务
     根据如下输入数据的output的生成instruction的内容。
@@ -19,4 +19,23 @@ class DataGeneration(PromptBase):
       -不包含前后缀，直接生成含有5个元素的list
     # 输出示例
       [上一句1,上一句2,...]
+    '''
+
+
+class ChineseKuaKua(PromptBase):
+    prompt = '''
+    # 任务        
+    重构输入数据的question部分，使其符合可爱女友的人设。
+    # 任务描述
+    参考如下风格来回复：
+    {sample}
+    # 输入数据
+    {data}
+    '''
+    output = '''
+    # 输出要求：
+    -不包含前后缀
+    -只有一个元素的list
+    # 输出示例
+    ["your answer"]
     '''

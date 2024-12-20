@@ -64,6 +64,7 @@ class Dataset:
 
 
 if __name__ == '__main__':
+    # 数据集构成 抖音评论500条 ai生成 4500条
     dataset = Dataset()
     sample1 = {
         "instruction": "你好",

@@ -1,42 +1,98 @@
 import random
 from db.api import insert_one_not_exist
 from initialize import openai_chat, deepseek_chat
-from prompts.data import DataGeneration
+from prompts.data import DouyinComment
 from utils.schema import HumanMessage
 from db.schema import Dialogue
 from utils.extract_tools import extract_struct
 from logger_config import logger
+from core.csv_load import get_qa_from_csv
+import asyncio
+from prompts.data import ChineseKuaKua
 
 
-def ai_generate_data():
-    dialogues = list(Dialogue.objects.all())  # 无限了
-    print(len(dialogues))
-    for dialogue in dialogues:
-        dialogue.skip = True
+class AIGenerator:
+    CONCURRENT_REQUESTS = 10
+
+    def __init__(self):
+        # 全局信号量，控制并发数
+        self.semaphore = asyncio.Semaphore(self.CONCURRENT_REQUESTS)
+
+    def douyin_from_mongo(self):
+        dialogues = list(Dialogue.objects.all())  # 无限了
+        print(len(dialogues))
+        for dialogue in dialogues:
+            dialogue.skip = True
+            try:
+                shareGpt = {
+                    "instruction": "xxx",
+                    "input": "",
+                    "output": dialogue.output
+                }
+                model = random.choice([openai_chat, deepseek_chat])
+                messages = [
+                    HumanMessage(content=DouyinComment.format(data=shareGpt))
+                ]
+                print(f'use:{model.__class__.__name__}', dialogue.output)
+                print(DouyinComment.format(data=shareGpt))
+                data = ''
+                for text in openai_chat.compile_to_stream(messages=messages):
+                    data += text
+                json_data = extract_struct(data, list)
+                for item in json_data:
+                    insert_one_not_exist(instruction=item, output=dialogue.output)
+            except Exception as e:
+                logger.error(f'obj_id:{dialogue.id} error:{str(e)}')
+
+    async def chinese_kuakua_from_csv(self, path, num):
+        data = get_qa_from_csv(path, num)
+        results = await self.process_batches(data)
+        return results  # 返回最终的结果列表
+
+    def prompt_wrapper(self, data):
+        messages = [
+            HumanMessage(content=ChineseKuaKua.format(data=data, sample='宝宝 凌晨了 早点休息 我会心疼的[调皮]'))
+        ]
+        return messages
+
+    async def process_batches(self, data_list):
+        tasks = []
+        results = []  # 用来存储每个任务的结果
+        # 分批处理数据
+        for index, data in enumerate(data_list):
+            data = self.prompt_wrapper(data)
+            # 限制并发数
+            tasks.append(asyncio.create_task(self.fetch_data(data, index)))
+
+            # 每10个请求完成一个批次后再继续发送
+            if len(tasks) >= self.CONCURRENT_REQUESTS:
+                # 等待当前批次所有任务完成，并将结果收集到 results
+                batch_results = await asyncio.gather(*tasks)
+                results.extend(batch_results)  # 将本批次结果加入最终的结果列表
+                tasks = []  # 清空任务列表，准备处理下一个批次
+
+        # 处理最后剩余的请求
+        if tasks:
+            batch_results = await asyncio.gather(*tasks)
+            results.extend(batch_results)  # 将剩余请求的结果加入最终结果列表
+
+        return results  # 返回所有请求的结果
+
+    async def fetch_data(self, data, index):
         try:
-            shareGpt = {
-                "instruction": "xxx",
-                "input": "",
-                "output": dialogue.output
-            }
-            model = random.choice([openai_chat, deepseek_chat])
-            messages = [
-                HumanMessage(content=DataGeneration.format(data=shareGpt))
-            ]
-            print(f'use:{model.__class__.__name__}', dialogue.output)
-            print(DataGeneration.format(data=shareGpt))
-            data = ''
-            for text in openai_chat.compile_to_stream(messages=messages):
-                data += text
-            json_data = extract_struct(data, list)
-            for item in json_data:
-                insert_one_not_exist(instruction=item, output=dialogue.output)
+            # 获取返回结果
+            result = await deepseek_chat.async_compile_to_stream(data)
+            logger.info(f"Request {index} succeeded: {result}")
+            return result
         except Exception as e:
-            logger.error(f'obj_id:{dialogue.id} error:{str(e)}')
+            logger.error(f"Request {index} failed with exception: {str(e)}")
+            return None
 
 
 if __name__ == '__main__':
-    ai_generate_data()
+    path = r'D:\project\dataset_maker\data\other\train.csv'
+    num = 5
+    asyncio.run(AIGenerator().chinese_kuakua_from_csv(path, num))
     # 原始数据500条 -> ai增强获得了4500条 也就是说 500 -> 5000 条
     # 你好、你是谁这两个特定问题，各添加50条数据（还是比例少了） 一个问题50条数据 然后再将其×5 得到 250 条这样还少了
     # 找到日常对话数据集 使用RAG产生角色扮演对话数据
