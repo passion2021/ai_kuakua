@@ -35,7 +35,7 @@ class OpenAIChat:
 
 
 if __name__ == '__main__':
-    chat = OpenAIChat('gpt-4o-mini', "sk-TceIO7gS8tr8FXXv5LeaWmDC2CEHqaKLRNm9MlvkGMSX8bdn")
+    chat = OpenAIChat('gpt-4o-mini', 'sk-xxxxxx')
     messages = [
         {"role": "user", "content": "你好"}
     ]

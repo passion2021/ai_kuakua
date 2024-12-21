@@ -1,6 +1,5 @@
 from openai import OpenAI
 from openai import AsyncOpenAI
-import openai
 
 
 class DeepSeekChat:
@@ -67,7 +66,7 @@ class DeepSeekChat:
 
 
 if __name__ == '__main__':
-    chat = DeepSeekChat('deepseek-chat', "sk-8bc747fbd79841349075a3cd342bf324")
+    chat = DeepSeekChat('deepseek-chat', 'sk-xxxxxx')
     messages = [
         {"role": "user", "content": "hello"}
     ]

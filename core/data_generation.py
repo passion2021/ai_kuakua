@@ -1,3 +1,4 @@
+import json
 import random
 from db.api import insert_one_not_exist
 from initialize import openai_chat, deepseek_chat
@@ -40,22 +41,33 @@ class AIGenerator:
 
 
 class AsyncAIGenerator:
-    CONCURRENT_REQUESTS = 2
+    CONCURRENT_REQUESTS = 10
 
     def __init__(self, input_data_num):
         self.num = input_data_num
         self.semaphore = asyncio.Semaphore(self.CONCURRENT_REQUESTS)
 
     async def chinese_kuakua_from_csv(self, path):
+        output_data = []
         data = get_qa_from_csv(path=path, num=self.num)
         results = await self.process_batches(data)
+        with open('chinese_kuakua.json', 'w', encoding='utf-8') as f:
+            for result in results:
+                q, a = result
+                sample = {
+                    "instruction": q,
+                    "input": "",
+                    "output": a
+                }
+                output_data.append(sample)
+            json.dump(output_data, f, ensure_ascii=False, indent=4)
         return results  # 返回最终的结果列表
 
     def prompt_wrapper(self, data):
         random_num = random.randint(500, 500 + self.num - 1)
         obj = Dialogue.objects.all()[random_num]
         sample = {
-            'question':obj.instruction,
+            'question': obj.instruction,
             'answer': obj.output
         }
         data = {
@@ -72,10 +84,9 @@ class AsyncAIGenerator:
         results = []  # 用来存储每个任务的结果
         # 分批处理数据
         for index, data in enumerate(data_list):
-            data = self.prompt_wrapper(data)
-            print(data)
+            messages = self.prompt_wrapper(data)
             # 限制并发数
-            tasks.append(asyncio.create_task(self.fetch_data(data, index)))
+            tasks.append(asyncio.create_task(self.fetch_data(data, messages, index)))
 
             # 每10个请求完成一个批次后再继续发送
             if len(tasks) >= self.CONCURRENT_REQUESTS:
@@ -91,12 +102,12 @@ class AsyncAIGenerator:
 
         return results  # 返回所有请求的结果
 
-    async def fetch_data(self, data, index):
+    async def fetch_data(self, data, messages, index):
         try:
             # 获取返回结果
-            result = await deepseek_chat.async_compile_to_stream(data)
+            result = await deepseek_chat.async_compile_to_stream(messages)
             logger.info(f"Request {index} succeeded: {result}")
-            return result
+            return (data[0], result)
         except Exception as e:
             logger.error(f"Request {index} failed with exception: {str(e)}")
             return None
@@ -104,14 +115,5 @@ class AsyncAIGenerator:
 
 if __name__ == '__main__':
     path = r'D:\project\dataset_maker\data\other\train.csv'
-    input_data_num = 5
+    input_data_num = 4
     asyncio.run(AsyncAIGenerator(input_data_num=input_data_num).chinese_kuakua_from_csv(path))
-
-    # 原始数据500条 -> ai增强获得了4500条 也就是说 500 -> 5000 条
-    # 你好、你是谁这两个特定问题，各添加50条数据（还是比例少了） 一个问题50条数据 然后再将其×5 得到 250 条这样还少了
-    # 找到日常对话数据集 使用RAG产生角色扮演对话数据
-    # 展示模型在微调前后的性能对比，包括准确率、响应时间等关键指标。
-    # 可以通过截图或视频形式直观展示模型的效果
-    # 数据标注：
-    # 添加“情感标签”（如撒娇、关心、调侃）和“对话意图标签”（如提问、回答、安慰），便于模型学习对话风格。
-    # 标注“父子对话关系”类型（如明确回答、偏题回应、情绪化表达）。。

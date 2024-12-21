@@ -16,7 +16,7 @@ def setup_logger():
     # 添加文件日志处理器
     logger.add(
         LOGS_PATH / "app.log",
-        level="INFO",
+        level="WARNING",
         rotation="1 week",
         retention="10 days",
         compression="zip",

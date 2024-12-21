@@ -1,3 +1,6 @@
+import json
+from core.csv_load import get_qa_from_csv
+
 from db.schema import Dialogue
 
 
@@ -51,4 +54,15 @@ def trim_database_final(num):
 
 
 if __name__ == '__main__':
-    pass
+
+    # path = r'D:\project\dataset_maker\core\chinese_kuakua.json'
+    # with open(path, 'r', encoding='utf-8') as f:
+    #     json_data = json.load(f)
+    #     for item in json_data:
+    #         insert_one_not_exist(instruction=item['instruction'], output=item['output'])
+
+    # data = get_qa_from_csv(r'D:\project\dataset_maker\data\other\train.csv', 2500)
+    # for question, answer in data:
+    #     insert_one_not_exist(instruction=question, output=answer)
+
+    trim_database_final(9)

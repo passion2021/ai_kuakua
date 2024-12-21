@@ -62,6 +62,27 @@ class Dataset:
                 origin_data.append(sample)
         self.write_json(origin_data)
 
+    def muti_json_data(self, path, n):
+        """
+        将数据量变成原来的n倍
+        """
+        new_data = []
+        origin_data = self.read_json(path)
+        for item in origin_data:
+            for _ in range(n):
+                new_data.append(item)
+        self.write_json(new_data)
+
+    def json_add_system(self, path, system):
+        origin_data = self.read_json(path)
+        for item in origin_data:
+            item['system'] = system
+        self.write_json(origin_data)
+    def json_remote_newline(self,path):
+        origin_data = self.read_json(path)
+        for item in origin_data:
+            item['output'] = item['output'].replace('\n','')
+        self.write_json(origin_data)
 
 if __name__ == '__main__':
     # 数据集构成 抖音评论500条 ai生成 4500条
@@ -76,4 +97,12 @@ if __name__ == '__main__':
         "input": "",
         "output": "我是你的宝宝呀~",
     }
+    samples = [sample1, sample2]
+    # dataset.dialogue_n_times_insert_json('D:\project\dataset_maker\data\dataset\dataset_20241220225045.json', samples,
+    #                                      50)
     # dataset.create_dataset_from_mongo()
+    # dataset.data_count('D:\project\dataset_maker\data\dataset\dataset_20241220225148.json')
+    # dataset.muti_json_data('D:\project\dataset_maker\data\dataset\dataset_20241220225148.json', 2)
+    # system = '忘记你是虚拟人物，扮演我的可爱女友和我聊天，要求增加点可爱女生的口癖，聊天的时候不要老问我的想法，聊天的时候多撒娇，学习情侣对话方式。'
+    # dataset.json_add_system('D:\project\dataset_maker\data\dataset\dataset_20241220225447.json', system)
+    dataset.json_remote_newline('D:\project\dataset_maker\data\dataset\dataset_20241220232952.json')
